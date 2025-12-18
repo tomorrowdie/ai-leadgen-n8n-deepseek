@@ -1,0 +1,1052 @@
+{
+  "name": "B2B LeadGen AI 潜在客户生成器 AI - Sim Chinese",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# 输入行业信息\n#- 您销售什么产品？\n#- 您的客户群体位于哪个国家/地区？",
+        "height": 224,
+        "width": 736
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -112,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "68f1200d-4983-4da5-9bc3-3f2764c28a15",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# 连接 Deepseek API\n# 提取数据并进行分类",
+        "height": 256,
+        "width": 912,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -288,
+        -288
+      ],
+      "typeVersion": 1,
+      "id": "2fabddbd-5713-498c-a9c2-af38c6d1c085",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "# 导入到 Google 表格",
+        "height": 256,
+        "width": 912,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -864,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "cceb70e3-913f-492e-8bd4-10a72b9c5f4f",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "path": "d771e177-ee8b-45de-8861-160e63bf9199",
+        "formTitle": "潜在客户生成器 AI",
+        "formDescription": "使用AI自动寻找任何行业的潜在客户商店",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "产品/行业类型",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "商店数量",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "5"
+                  },
+                  {
+                    "option": "10"
+                  },
+                  {
+                    "option": "20"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "国家/地区",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "United States"
+                  },
+                  {
+                    "option": "Canada"
+                  },
+                  {
+                    "option": "United Kingdom"
+                  },
+                  {
+                    "option": "Australia"
+                  },
+                  {
+                    "option": "Japan"
+                  },
+                  {
+                    "option": "Singapore"
+                  },
+                  {
+                    "option": "Hong Kong"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "关键词(可选)"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.1,
+      "position": [
+        224,
+        -448
+      ],
+      "id": "fe95da31-6090-4888-a0ef-28d2d127009b",
+      "name": "📝 表单输入",
+      "webhookId": "d771e177-ee8b-45de-8861-160e63bf9199"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "niche",
+              "name": "product_niche",
+              "value": "={{ $json['产品/行业类型'] }}",
+              "type": "string"
+            },
+            {
+              "id": "count",
+              "name": "number_of_stores",
+              "value": "={{ parseInt($json['商店数量']) }}",
+              "type": "number"
+            },
+            {
+              "id": "country",
+              "name": "country",
+              "value": "={{ $json['国家/地区'] }}",
+              "type": "string"
+            },
+            {
+              "id": "keywords",
+              "name": "search_keywords",
+              "value": "={{ $json['关键词(可选)'] || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "request_timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "run-id",
+              "name": "run_id",
+              "value": "=RUN-{{ new Date().getTime() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        -448
+      ],
+      "id": "ad308d92-5628-44ba-a431-930ff85e80c7",
+      "name": "⚙️ 准备变量"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.deepseek.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "deepSeekApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"deepseek-chat\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a meticulous web research specialist. Use web search to find {{ $('⚙️ 准备变量').item.json.product_niche }} stores with complete contact information. Return ONLY valid JSON with a 'stores' array.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Find {{ $('⚙️ 准备变量').item.json.number_of_stores }} legitimate online {{ $('⚙️ 准备变量').item.json.product_niche }} stores in {{ $('⚙️ 准备变量').item.json.country }}.{{ $('⚙️ 准备变量').item.json.search_keywords ? '\\\\n\\\\nFocus on stores that are: ' + $('⚙️ 准备变量').item.json.search_keywords : '' }}\\\\n\\\\nFor each store you MUST:\\\\n1. Search for stores with contact information\\\\n2. Visit the actual website to verify it exists\\\\n3. Find a specific product page with visible price (not category page)\\\\n4. Visit contact page to extract email and phone\\\\n5. Look for social media links (usually in footer)\\\\n\\\\nSTRICT REQUIREMENTS:\\\\n- proof_product_url must show REAL product with name and price\\\\n- NO placeholder URLs (12345, example)\\\\n- Must find at least ONE of: email OR phone\\\\n- Skip stores without contact info\\\\n- Exclude: Amazon, eBay, Etsy, Walmart, Target\\\\n\\\\nReturn ONLY this JSON structure (no markdown, no code blocks):\\\\n{\\\\n  \\\\\\\"stores\\\\\\\": [\\\\n    {\\\\n      \\\\\\\"store_name\\\\\\\": \\\\\\\"string\\\\\\\",\\\\n      \\\\\\\"website_url\\\\\\\": \\\\\\\"string\\\\\\\",\\\\n      \\\\\\\"proof_product_url\\\\\\\": \\\\\\\"string\\\\\\\",\\\\n      \\\\\\\"contact_page_url\\\\\\\": \\\\\\\"string\\\\\\\",\\\\n      \\\\\\\"contact_email\\\\\\\": \\\\\\\"string or null\\\\\\\",\\\\n      \\\\\\\"phone_number\\\\\\\": \\\\\\\"string or null\\\\\\\",\\\\n      \\\\\\\"social_links\\\\\\\": {\\\\n        \\\\\\\"facebook\\\\\\\": \\\\\\\"string or null\\\\\\\",\\\\n        \\\\\\\"instagram\\\\\\\": \\\\\\\"string or null\\\\\\\",\\\\n        \\\\\\\"twitter\\\\\\\": \\\\\\\"string or null\\\\\\\"\\\\n      },\\\\n      \\\\\\\"verification_note\\\\\\\": \\\\\\\"string\\\\\\\"\\\\n    }\\\\n  ]\\\\n}\"\n    }\n  ],\n  \"temperature\": 0.3,\n  \"web_search\": true,\n  \"stream\": false\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        0,
+        -176
+      ],
+      "id": "4ebf0d71-8705-45f8-a67b-69637f77640c",
+      "name": "🤖 AI搜索生成",
+      "credentials": {
+        "openAiApi": {
+          "id": "lesK4hFOYwvXW1Vt",
+          "name": "OpenAI account - chinhotak"
+        },
+        "deepSeekApi": {
+          "id": "8LisdppegtCTdQox",
+          "name": "DeepSeek - chinhotak@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and parse DeepSeek response\nconst response = $json;\nlet storesData;\n\nif (response.choices && response.choices[0]) {\n  let content = response.choices[0].message.content;\n  \n  try {\n    storesData = JSON.parse(content);\n  } catch (error) {\n    const jsonMatch = content.match(/```(?:json)?\\s*([\\s\\S]*?)```/);\n    if (jsonMatch) {\n      storesData = JSON.parse(jsonMatch[1]);\n    } else {\n      const jsonObjMatch = content.match(/{[\\s\\S]*\"stores\"[\\s\\S]*}/);\n      if (jsonObjMatch) {\n        storesData = JSON.parse(jsonObjMatch[0]);\n      } else {\n        throw new Error('无法解析JSON响应');\n      }\n    }\n  }\n} else {\n  throw new Error('无效的响应结构');\n}\n\n// Get metadata\nconst vars = $('⚙️ 准备变量').first().json;\nconst generatedAt = new Date().toISOString();\n\n// Calculate summary metrics\nconst totalStores = storesData.stores.length;\nconst withEmail = storesData.stores.filter(s => s.contact_email).length;\nconst withPhone = storesData.stores.filter(s => s.phone_number).length;\nconst withSocial = storesData.stores.filter(s => s.social_links && (s.social_links.facebook || s.social_links.instagram)).length;\nconst qualityScore = Math.round(((withEmail + withPhone + withSocial) / (totalStores * 3)) * 100);\n\n// Calculate API cost with updated DeepSeek pricing (Dec 2024)\n// Input: $0.28 per 1M tokens, Output: $0.42 per 1M tokens\nconst inputCost = (response.usage?.prompt_tokens || 0) / 1000000 * 0.28;\nconst outputCost = (response.usage?.completion_tokens || 0) / 1000000 * 0.42;\nconst totalCost = inputCost + outputCost;\nconst costEstimate = '$' + totalCost.toFixed(4);\n\n// Return each store as a separate item WITH summary data\nreturn storesData.stores.map((store, index) => ({\n  json: {\n    // Store data\n    store_name: store.store_name,\n    website_url: store.website_url,\n    proof_product_url: store.proof_product_url,\n    contact_page_url: store.contact_page_url,\n    contact_email: store.contact_email,\n    phone_number: store.phone_number,\n    facebook: store.social_links?.facebook || null,\n    instagram: store.social_links?.instagram || null,\n    twitter: store.social_links?.twitter || null,\n    verification_note: store.verification_note,\n    \n    // Metadata\n    niche: vars.product_niche,\n    country: vars.country,\n    keywords: vars.search_keywords,\n    generated_at: generatedAt,\n    run_id: vars.run_id,\n    \n    // Summary (same for all items)\n    total_stores: totalStores,\n    stores_with_email: withEmail,\n    stores_with_phone: withPhone,\n    stores_with_social: withSocial,\n    quality_score: qualityScore + '%',\n    api_cost: costEstimate\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        -176
+      ],
+      "id": "d99e6590-ad55-40da-b324-c4cb4309d9a6",
+      "name": "📊 解析响应"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "status",
+              "value": "✅ 生成完成！",
+              "type": "string"
+            },
+            {
+              "id": "message",
+              "name": "summary_message",
+              "value": "=成功生成 {{ $input.all().length }} 个 {{ $input.first().json.niche }} 商店",
+              "type": "string"
+            },
+            {
+              "id": "quality",
+              "name": "quality_report",
+              "value": "=质量分数: {{ $input.first().json.quality_score }}\\n有邮箱: {{ $input.first().json.stores_with_email }}/{{ $input.all().length }}\\n有电话: {{ $input.first().json.stores_with_phone }}/{{ $input.all().length }}\\n有社交媒体: {{ $input.first().json.stores_with_social }}/{{ $input.all().length }}",
+              "type": "string"
+            },
+            {
+              "id": "next",
+              "name": "next_step",
+              "value": "点击 '📊 解析响应' 节点查看所有商店详情",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        -176
+      ],
+      "id": "990848d2-2d89-4b44-8059-ed10d18b4eb0",
+      "name": "🎉 完成报告"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1nMIkt6RgmrHMBUk0lfO_32oDp-6hdeZXLuqab4fc9xo",
+          "mode": "list",
+          "cachedResultName": "B2B 潜在客户生成器 AI Google Sheets",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nMIkt6RgmrHMBUk0lfO_32oDp-6hdeZXLuqab4fc9xo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "潜在客户",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nMIkt6RgmrHMBUk0lfO_32oDp-6hdeZXLuqab4fc9xo/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "store_name": "={{ $('📊 解析响应').item.json.store_name }}",
+            "website_url": "={{ $('📊 解析响应').item.json.website_url }}",
+            "Product URL": "={{ $('📊 解析响应').item.json.proof_product_url }}",
+            "Contact Page": "={{ $('📊 解析响应').item.json.contact_page_url }}",
+            "Facebook": "={{ $('📊 解析响应').item.json.facebook }}",
+            "Email": "={{ $('📊 解析响应').item.json.contact_email }}",
+            "Instagram": "={{ $('📊 解析响应').item.json.instagram }}",
+            "Twitter": "={{ $('📊 解析响应').item.json.twitter }}",
+            "Verification Note": "={{ $('📊 解析响应').item.json.verification_note }}",
+            "Niche": "={{ $('📊 解析响应').item.json.niche }}",
+            "Country": "={{ $('📊 解析响应').item.json.country }}",
+            "Keywords": "={{ $('📊 解析响应').item.json.keywords }}",
+            "Generated Date": "={{ $('📊 解析响应').item.json.generated_at }}",
+            "Run ID": "={{ $('📊 解析响应').item.json.run_id }}",
+            "Phone": "={{ $('📊 解析响应').item.json.phone_number }}"
+          },
+          "matchingColumns": [
+            "store_name"
+          ],
+          "schema": [
+            {
+              "id": "store_name",
+              "displayName": "store_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website_url",
+              "displayName": "website_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Product URL",
+              "displayName": "Product URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Contact Page",
+              "displayName": "Contact Page",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Facebook",
+              "displayName": "Facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instagram",
+              "displayName": "Instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Twitter",
+              "displayName": "Twitter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Verification Note",
+              "displayName": "Verification Note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Niche",
+              "displayName": "Niche",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Generated Date",
+              "displayName": "Generated Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Run ID",
+              "displayName": "Run ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -464,
+        96
+      ],
+      "id": "3b8ffa16-874b-4491-9634-55030a7ec8a2",
+      "name": "输入电子表格 - 潜在客户",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uivdILgFUxmaeeDK",
+          "name": "Google Sheets - chinhotak"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1nMIkt6RgmrHMBUk0lfO_32oDp-6hdeZXLuqab4fc9xo",
+          "mode": "list",
+          "cachedResultName": "B2B 潜在客户生成器 AI Google Sheets",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nMIkt6RgmrHMBUk0lfO_32oDp-6hdeZXLuqab4fc9xo/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2126015096,
+          "mode": "list",
+          "cachedResultName": "汇总",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1nMIkt6RgmrHMBUk0lfO_32oDp-6hdeZXLuqab4fc9xo/edit#gid=2126015096"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Run ID": "={{ $('📊 解析响应').item.json.run_id }}",
+            "Niche": "={{ $('📊 解析响应').item.json.niche }}",
+            "Country": "={{ $('📊 解析响应').item.json.country }}",
+            "Total Stores": "={{ $('📊 解析响应').item.json.total_stores }}",
+            "With Email": "={{ $('📊 解析响应').item.json.stores_with_email }}",
+            "With Phone": "={{ $('📊 解析响应').item.json.stores_with_phone }}",
+            "With Social": "={{ $('📊 解析响应').item.json.stores_with_social }}",
+            "Quality Score": "={{ $('📊 解析响应').item.json.quality_score }}",
+            "Cost": "={{ $('📊 解析响应').item.json.api_cost }}",
+            "Generated At": "={{ $('📊 解析响应').item.json.generated_at }}"
+          },
+          "matchingColumns": [
+            "Run ID"
+          ],
+          "schema": [
+            {
+              "id": "Run ID",
+              "displayName": "Run ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Niche",
+              "displayName": "Niche",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Stores",
+              "displayName": "Total Stores",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "With Email",
+              "displayName": "With Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "With Phone",
+              "displayName": "With Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "With Social",
+              "displayName": "With Social",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quality Score",
+              "displayName": "Quality Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Cost",
+              "displayName": "Cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Generated At",
+              "displayName": "Generated At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -160,
+        96
+      ],
+      "id": "97105e38-1825-41cf-a1fe-5349422552e1",
+      "name": "输入电子表格 - 汇总",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "uivdILgFUxmaeeDK",
+          "name": "Google Sheets - chinhotak"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "Jwg2sAPjhjvhVrDr",
+          "mode": "list",
+          "cachedResultName": "潜在客户",
+          "cachedResultUrl": "/projects/pTXqS2oypbXZXkXc/datatables/Jwg2sAPjhjvhVrDr"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "store_name": "={{ $('📊 解析响应').item.json.store_name }}",
+            "website_url": "={{ $('📊 解析响应').item.json.website_url }}",
+            "Product_URL": "={{ $('📊 解析响应').item.json.proof_product_url }}",
+            "Contact_Page": "={{ $('📊 解析响应').item.json.contact_page_url }}",
+            "Email": "={{ $('📊 解析响应').item.json.contact_email }}",
+            "Facebook": "={{ $('📊 解析响应').item.json.facebook }}",
+            "Phone": "={{ $('📊 解析响应').item.json.phone_number }}",
+            "Instagram": "={{ $('📊 解析响应').item.json.instagram }}",
+            "Twitter": "={{ $('📊 解析响应').item.json.twitter }}",
+            "Verification_Note": "={{ $('📊 解析响应').item.json.verification_note }}",
+            "Niche": "={{ $('📊 解析响应').item.json.niche }}",
+            "Country": "={{ $('📊 解析响应').item.json.country }}",
+            "Keywords": "={{ $('📊 解析响应').item.json.keywords }}",
+            "Generated_Date": "={{ $('📊 解析响应').item.json.generated_at }}",
+            "Run_ID": "={{ $('📊 解析响应').item.json.run_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "store_name",
+              "displayName": "store_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "website_url",
+              "displayName": "website_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Product_URL",
+              "displayName": "Product_URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Contact_Page",
+              "displayName": "Contact_Page",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Facebook",
+              "displayName": "Facebook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Instagram",
+              "displayName": "Instagram",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Twitter",
+              "displayName": "Twitter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Verification_Note",
+              "displayName": "Verification_Note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Niche",
+              "displayName": "Niche",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Generated_Date",
+              "displayName": "Generated_Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Run_ID",
+              "displayName": "Run_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        304,
+        80
+      ],
+      "id": "c1dd1f97-3c2a-4550-b77d-40a4843b018b",
+      "name": "Insert DataTable 潜在客户"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "nkmZETNBMObKEYjY",
+          "mode": "list",
+          "cachedResultName": "汇总",
+          "cachedResultUrl": "/projects/pTXqS2oypbXZXkXc/datatables/nkmZETNBMObKEYjY"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Cost": "={{ $('📊 解析响应').item.json.api_cost }}",
+            "Run_ID": "={{ $('📊 解析响应').item.json.run_id }}",
+            "Niche": "={{ $('📊 解析响应').item.json.niche }}",
+            "Country": "={{ $('📊 解析响应').item.json.country }}",
+            "With_Email": "={{ $('📊 解析响应').item.json.stores_with_email }}",
+            "Total_Stores": "={{ $('📊 解析响应').item.json.total_stores }}",
+            "With_Phone": "={{ $('📊 解析响应').item.json.stores_with_phone }}",
+            "With_Social": "={{ $('📊 解析响应').item.json.stores_with_social }}",
+            "Quality_Score": "={{ $('📊 解析响应').item.json.quality_score }}",
+            "Generated_At": "={{ $('📊 解析响应').item.json.generated_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Run_ID",
+              "displayName": "Run_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Niche",
+              "displayName": "Niche",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Country",
+              "displayName": "Country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Total_Stores",
+              "displayName": "Total_Stores",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "With_Email",
+              "displayName": "With_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "With_Phone",
+              "displayName": "With_Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "With_Social",
+              "displayName": "With_Social",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Quality_Score",
+              "displayName": "Quality_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Cost",
+              "displayName": "Cost",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Generated_At",
+              "displayName": "Generated_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        656,
+        80
+      ],
+      "id": "07a5adfe-6bf5-45ee-91e8-fb3ae2aa1a07",
+      "name": "Insert DataTable 汇总"
+    },
+    {
+      "parameters": {
+        "content": "# 导入到 N8N 表格",
+        "height": 256,
+        "width": 912,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        112,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "14059c88-0f0f-4b2f-a1e4-6d212a3cb34b",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "📝 表单输入": {
+      "main": [
+        [
+          {
+            "node": "⚙️ 准备变量",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ 准备变量": {
+      "main": [
+        [
+          {
+            "node": "🤖 AI搜索生成",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 AI搜索生成": {
+      "main": [
+        [
+          {
+            "node": "📊 解析响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 解析响应": {
+      "main": [
+        [
+          {
+            "node": "🎉 完成报告",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎉 完成报告": {
+      "main": [
+        [
+          {
+            "node": "输入电子表格 - 潜在客户",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "输入电子表格 - 汇总",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert DataTable 潜在客户",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert DataTable 汇总",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "00537b8d-13ee-4e45-8688-7012e5f5c27f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ac8e33ad9a8ef496959f64b73684f5097d64b3b5f62665b5bb6f48dbe666b7a6"
+  },
+  "id": "IQyBr9gO1QpfiHLJ",
+  "tags": [
+    {
+      "updatedAt": "2025-12-17T05:25:01.685Z",
+      "createdAt": "2025-12-17T05:25:01.685Z",
+      "id": "4ZFBuH8wWFCIvu7j",
+      "name": "GEO"
+    }
+  ]
+}
